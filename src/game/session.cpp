@@ -361,6 +361,7 @@ void Session::finishPhase()
     }
     m_cannonX.snap((m_rules.left + m_rules.right) * 0.5f);
     m_phase = Phase::Playing;
+    m_bombTimer.start(ticks(m_rules.respawnCalmSeconds)); // no bomb the moment the new cannon appears
     m_events.push({.kind = EventKind::Respawned, .position = {m_cannonX.value(), m_rules.cannonY}});
 }
 

@@ -27,6 +27,7 @@ struct Rules {
     int extraLifeAt = 1500;        // one extra cannon, as in the arcade
     float deathSeconds = 1.6f;     // the cannon's explosion; everything else holds still
     float waveClearSeconds = 2.2f; // the empty field before the next wave marches in
+    float respawnCalmSeconds = 1.0f; // no new bomb this long after a respawn
 
     // --- Formation -----------------------------------------------------------
     static constexpr int kColumns = 11;
