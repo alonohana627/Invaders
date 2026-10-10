@@ -2,6 +2,7 @@
 
 #include "gunner.hpp"
 #include "session.hpp"
+#include "view.hpp"
 
 #include <gamelib/ai/attract.hpp>
 #include <gamelib/app/app.hpp>
@@ -41,6 +42,7 @@ private:
 
     gamelib::app::ArcadeProfileFile m_profile; // the menus edit its settings in place
     gamelib::app::ArcadeMenus m_menus{"INVADERS", m_profile.value().settings};
+    Shapes m_shapes;
     gamelib::core::Rng m_seeds{gamelib::core::randomSeed()};
     gamelib::ai::AttractMode<Demo> m_attract;
     gamelib::core::ScoreKeeper m_scores;

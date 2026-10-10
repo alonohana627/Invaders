@@ -1,6 +1,11 @@
 #include "invaders_game.hpp"
 
-#include "view.hpp"
+#include "alien_frag.spv.hpp"
+#include "bomb_frag.spv.hpp"
+#include "cannon_frag.spv.hpp"
+#include "crt_frag.spv.hpp"
+#include "saucer_frag.spv.hpp"
+#include "shield_frag.spv.hpp"
 
 #include <gamelib/app/settings.hpp>
 #include <gamelib/ui/menu.hpp>
@@ -25,6 +30,12 @@ constexpr const char* kTitleFooter = "MOVE: ARROWS / A D    FIRE: SPACE    PAUSE
 
 InvadersGame::InvadersGame(gamelib::app::App& app, gamelib::app::ArcadeProfileFile profile, const bool demo)
     : m_profile{std::move(profile)}
+    , m_shapes{.crt = app.renderer().addShape(shaders::crt_frag),
+               .alien = app.renderer().addShape(shaders::alien_frag),
+               .cannon = app.renderer().addShape(shaders::cannon_frag),
+               .saucer = app.renderer().addShape(shaders::saucer_frag),
+               .bomb = app.renderer().addShape(shaders::bomb_frag),
+               .shield = app.renderer().addShape(shaders::shield_frag)}
     , m_attract{[tick = app.tickSeconds()](const std::uint64_t seed) {
                     return Demo{.session = game::Session{seed, tick}, .gunner = game::Gunner{seed * 31 + 7}};
                 },
@@ -140,6 +151,7 @@ void InvadersGame::draw(gamelib::app::App& app, gamelib::draw::DrawList& list, c
 {
     const bool title = m_menus.is(ArcadeScreen::Title);
     const ViewState view{.session = shownSession(),
+                         .shapes = m_shapes,
                          .alpha = m_menus.is(ArcadeScreen::Paused) ? 1.0f : info.alpha,
                          .time = info.time,
                          .best = m_scores.best(),
@@ -147,6 +159,7 @@ void InvadersGame::draw(gamelib::app::App& app, gamelib::draw::DrawList& list, c
     drawBackground(list, view);
     drawField(list, view);
     drawHud(list, view);
+    drawOverlay(list, view);
 
     const gamelib::ui::Menu* menu = m_menus.menu();
     if (menu == nullptr) {

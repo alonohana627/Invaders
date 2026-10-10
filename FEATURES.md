@@ -36,3 +36,17 @@ by running the game are listed; updated in the same commit as each feature
   `ArcadeMenus`; sound volume, screen shake and fullscreen (F11) saved with
   the best score in `invaders.ini` (`ArcadeProfile`).
 - `--demo`: the computer gunner plays on the playing screen, endlessly.
+
+## Look
+
+- Every visual is a shader: glowing two-frame squid, crab and octopus
+  creatures from signed distances (`shaders/alien.frag`, type and frame in
+  the sprite's params; they flip frames on every march step), an SDF
+  cannon, a mystery ship with chasing lights, three animated bomb kinds
+  (twisting, pumping, wriggling), and shields drawn one row per sprite with
+  each cell's strength in two bits, so erosion shows cell by cell.
+- A procedural CRT: a dark tube with a phosphor haze and the arcade's red
+  and green cellophane bands, then scanlines, a slow refresh bar and dark
+  rounded corners over the field.
+- HUD in glowing seven-segment digits: score, best and wave; the lives and
+  spare cannons under the ground line.
