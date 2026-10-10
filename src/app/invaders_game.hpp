@@ -2,6 +2,7 @@
 
 #include "gunner.hpp"
 #include "session.hpp"
+#include "sounds.hpp"
 #include "view.hpp"
 
 #include <gamelib/ai/attract.hpp>
@@ -36,6 +37,7 @@ public:
 private:
     void startGame(gamelib::app::App& app);
     void handleEvents(gamelib::app::App& app);
+    void loopSounds(gamelib::app::App& app);
     void saveBest();
     [[nodiscard]] static game::Input playerInput(const gamelib::platform::InputState& keys);
     [[nodiscard]] const game::Session& shownSession() const;
@@ -43,6 +45,7 @@ private:
     gamelib::app::ArcadeProfileFile m_profile; // the menus edit its settings in place
     gamelib::app::ArcadeMenus m_menus{"INVADERS", m_profile.value().settings};
     Shapes m_shapes;
+    Sounds m_sounds;
     gamelib::core::Rng m_seeds{gamelib::core::randomSeed()};
     gamelib::ai::AttractMode<Demo> m_attract;
     gamelib::core::ScoreKeeper m_scores;
@@ -53,6 +56,7 @@ private:
     game::Session m_session; // the player's game (or the --demo game)
     game::Gunner m_gunner;
     float m_time = 0.0f;
+    gamelib::core::Rng m_soundRng{gamelib::core::randomSeed()}; // small pitch variations
 };
 
 } // namespace invaders::app

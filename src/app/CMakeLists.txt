@@ -4,6 +4,7 @@
 # Invaders' content and look.
 add_library(invaders_app STATIC
     invaders_game.cpp
+    sounds.cpp
     view.cpp)
 target_include_directories(invaders_app PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(invaders_app PUBLIC invaders_game GameLib::app GameLib::ui GameLib::fx GameLib::ai)

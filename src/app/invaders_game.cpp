@@ -10,6 +10,7 @@
 #include <gamelib/app/settings.hpp>
 #include <gamelib/ui/menu.hpp>
 
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -36,6 +37,7 @@ InvadersGame::InvadersGame(gamelib::app::App& app, gamelib::app::ArcadeProfileFi
                .saucer = app.renderer().addShape(shaders::saucer_frag),
                .bomb = app.renderer().addShape(shaders::bomb_frag),
                .shield = app.renderer().addShape(shaders::shield_frag)}
+    , m_sounds{app.audio(), renderSfx}
     , m_attract{[tick = app.tickSeconds()](const std::uint64_t seed) {
                     return Demo{.session = game::Session{seed, tick}, .gunner = game::Gunner{seed * 31 + 7}};
                 },
@@ -84,6 +86,14 @@ void InvadersGame::onKey(gamelib::app::App& app, const gamelib::platform::KeyEve
     case ArcadeAction::Resume:
     case ArcadeAction::None: break;
     }
+    // Feedback after acting, so a new volume is heard right away.
+    switch (result.feedback) {
+    case gamelib::ui::MenuFeedback::None: break;
+    case gamelib::ui::MenuFeedback::Moved:
+    case gamelib::ui::MenuFeedback::Changed: m_sounds.queue(app.sounds(), Sfx::MenuMove); break;
+    case gamelib::ui::MenuFeedback::Selected: m_sounds.queue(app.sounds(), Sfx::MenuSelect); break;
+    case gamelib::ui::MenuFeedback::Back: m_sounds.queue(app.sounds(), Sfx::MenuBack); break;
+    }
 }
 
 game::Input InvadersGame::playerInput(const gamelib::platform::InputState& keys)
@@ -111,6 +121,7 @@ void InvadersGame::frame(gamelib::app::App& app, const gamelib::app::FrameInfo& 
     m_time = info.time;
     m_gameOverDelay.update(info.seconds);
     handleEvents(app);
+    loopSounds(app);
     if (!m_demoMode) {
         m_scores.set(m_session.score()); // the demo never sets a best score
     }
@@ -126,15 +137,60 @@ void InvadersGame::frame(gamelib::app::App& app, const gamelib::app::FrameInfo& 
     }
 }
 
-void InvadersGame::handleEvents(gamelib::app::App&)
+void InvadersGame::handleEvents(gamelib::app::App& app)
 {
     // The attract demo is silent and has no effects; its events are dropped.
     (void)m_attract.sim().session.takeEvents();
+    gamelib::audio::SoundQueue& queue = app.sounds();
     for (const game::Event& event : m_session.takeEvents()) {
-        if (event.kind == game::EventKind::GameOver) {
+        switch (event.kind) {
+        case game::EventKind::Fired: m_sounds.queue(queue, Sfx::Fire, 1.0f, m_soundRng.uniform(0.97f, 1.03f)); break;
+        case game::EventKind::AlienKilled:
+            m_sounds.queue(queue, Sfx::AlienDeath, 1.0f, m_soundRng.uniform(0.94f, 1.06f));
+            break;
+        case game::EventKind::ShieldHit: m_sounds.queue(queue, Sfx::ShieldHit, 1.0f, m_soundRng.uniform(0.9f, 1.1f)); break;
+        case game::EventKind::ShotHitBomb: m_sounds.queue(queue, Sfx::ShotHitBomb); break;
+        case game::EventKind::BombLanded: m_sounds.queue(queue, Sfx::BombLanded, 0.8f, m_soundRng.uniform(0.9f, 1.1f)); break;
+        case game::EventKind::Step:
+            m_sounds.queue(queue, static_cast<Sfx>(static_cast<int>(Sfx::March0) + event.value));
+            break;
+        case game::EventKind::SaucerKilled: m_sounds.queue(queue, Sfx::SaucerDeath); break;
+        case game::EventKind::CannonDestroyed: m_sounds.queue(queue, Sfx::CannonDeath); break;
+        case game::EventKind::ExtraLife: m_sounds.queue(queue, Sfx::ExtraLife); break;
+        case game::EventKind::WaveCleared: m_sounds.queue(queue, Sfx::WaveCleared); break;
+        case game::EventKind::WaveStarted:
+            if (event.value > 1) {
+                m_sounds.queue(queue, Sfx::WaveStart);
+            }
+            break;
+        case game::EventKind::GameOver:
+            m_sounds.queue(queue, Sfx::GameOver);
             m_gameEnded = true;
             m_gameOverDelay.start(kGameOverDelay);
+            break;
+        case game::EventKind::ShotMissed:
+        case game::EventKind::BombDropped:
+        case game::EventKind::SaucerAppeared:
+        case game::EventKind::SaucerLeft:
+        case game::EventKind::Respawned:
+        case game::EventKind::Invaded: break;
         }
+    }
+}
+
+void InvadersGame::loopSounds(gamelib::app::App& app)
+{
+    // The siren sounds for as long as the mystery ship flies on the playing
+    // screen; it stops (fading) when the ship goes or the game pauses.
+    const auto& saucer = m_session.saucer();
+    if (saucer && m_menus.is(ArcadeScreen::Playing) && m_session.phase() == game::Phase::Playing) {
+        // A little higher towards the middle of its run, like a doppler pass.
+        const game::Rules& rules = m_session.rules();
+        const float middle = (rules.left + rules.right) * 0.5f;
+        const float near = 1.0f - std::abs(saucer->position.value().x - middle) / (middle - rules.left);
+        m_sounds.loop(app.audio(), Sfx::SaucerSiren, 0.8f + 0.2f * near, 1.0f + 0.04f * near);
+    } else {
+        m_sounds.stopLoop(app.audio(), Sfx::SaucerSiren, 0.08f);
     }
 }
 

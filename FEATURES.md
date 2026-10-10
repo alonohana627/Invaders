@@ -50,3 +50,14 @@ by running the game are listed; updated in the same commit as each feature
   rounded corners over the field.
 - HUD in glowing seven-segment digits: score, best and wave; the lives and
   spare cannons under the ground line.
+
+## Sound
+
+- Every sound synthesized at startup (GameLib's synth and `SoundBank`): the
+  four-note marching bass (A G F E), one note per step, so it speeds up with
+  the formation; the shot, alien and cannon explosions, shield crunches,
+  shot-meets-bomb pops, bomb thuds, the mystery ship's death run, extra
+  life, wave cleared and started, game over and menu blips.
+- The mystery ship's siren loops (GameLib's `Player::loop`) for as long as
+  it flies, a little louder and higher in the middle of its run; it fades
+  out when the ship goes or the game pauses.
