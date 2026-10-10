@@ -55,8 +55,10 @@ task would have gone better with a missing skill. Mention changes in one line.
 
 ```text
 CMakeLists.txt, CMakePresets.json   project, GameLib pin, presets
-src/          the game
-shaders/      the game's own fragment shaders
+src/game/     rules: Session, Formation, Shield, Gunner (demo AI)  -> GameLib::core, ai
+src/app/      InvadersGame (GameLib main loop), view, sounds, effects, palette
+src/main.cpp  AppConfig and runMain
+shaders/      the game's own fragment shaders (aliens, cannon, saucer, bombs, shield rows, CRT)
 smoke/        CTest smoke runs
 docs/GAMELIB_REVISION.md   the GameLib commit each change was validated with
 ```
@@ -67,5 +69,5 @@ docs/GAMELIB_REVISION.md   the GameLib commit each change was validated with
 cmake --preset debug           # configure (fetches GameLib from GitHub at the pinned commit)
 cmake --build --preset debug
 ctest --preset debug           # smoke runs (validation layer required)
-build/debug/bin/invaders.exe   # play
+build/debug/bin/invaders.exe   # play; --demo starts an endless computer game
 ```

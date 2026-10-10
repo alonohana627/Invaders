@@ -14,3 +14,4 @@ against (`Invaders: using GameLib ...`).
 | Rules, controls, shaders and menus (`feat`) | `26a257b` | debug build with zero warnings, 3/3 smoke runs (title, unthrottled demo, resize + minimize), zero validation messages |
 | Re-pin for looping sounds (`audio::Player::loop`, GameLib `feat(audio)`), sounds and the siren (`feat`) | `520a4d5` | debug build with zero warnings, 3/3 smoke runs, zero validation messages |
 | Re-pin for `fx::Transients` and popups at a position (GameLib `feat(fx)` x2), juice (`feat`) | `09fa3fb` | debug build with zero warnings, 3/3 smoke runs, zero validation messages |
+| Polish and docs (`feat`, `docs`) | `09fa3fb` | clean debug and release builds with zero warnings, 3/3 smoke runs in each (title, unthrottled demo, resize + minimize), zero validation messages |

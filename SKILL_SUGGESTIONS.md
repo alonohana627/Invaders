@@ -49,4 +49,23 @@ In `~/.claude/skills/` (checked 2026-10-10):
 
 ## Suggested
 
-None yet.
+### retro-crt-screen-shader
+
+A CRT look for a 2D game drawn as sprites on a straight-alpha renderer,
+without an offscreen pass: a full-canvas background shader (dark tube,
+phosphor haze, the colored cellophane bands of old cabinets) drawn first
+and a full-canvas overlay drawn over the field and under the menus
+(scanlines tied to framebuffer pixels so they stay crisp at any window
+size, a slow refresh bar, rounded dark tube corners); composing several
+translucent layers in one straight-alpha output with `over()` instead of
+mixing color and alpha separately (which leaves bright blobs where a light
+layer meets a dark one); keeping bands and bars faint enough that the
+HUD and sprites stay readable; and checking it at two window sizes for
+moire.
+
+Why: Invaders' first CRT overlay showed white rectangles at the screen
+edges (a light bar mixed into the dark corner's alpha), the cellophane
+bands were far too strong and a noise grain showed as 20-pixel blocks; all
+were found on screenshots and fixed by trial. `vector-arcade-neon-look`
+lists CRT emulation as not covered, and `vulkan-offscreen-postprocess`
+needs a render-target pass GameLib does not have.
