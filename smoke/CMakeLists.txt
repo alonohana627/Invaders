@@ -18,5 +18,10 @@ function(invaders_smoke name)
         ENVIRONMENT_MODIFICATION "${_smoke_env}")
 endfunction()
 
-# The title screen.
+# The title screen with the attract demo behind the menu.
 invaders_smoke(title --frames 600)
+# The demo gunner on the playing screen, unthrottled: waves, bombs, shields,
+# the mystery ship and deaths with the validation layer watching every frame.
+invaders_smoke(demo --demo --no-vsync --frames 20000)
+# Swapchain recreation while the demo plays: a resize, then minimize and restore.
+invaders_smoke(resize_minimize --demo --frames 300 --resize-at-frame 60 --minimize-at-frame 150)
