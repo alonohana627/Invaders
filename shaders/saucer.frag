@@ -17,8 +17,11 @@ void main()
     float glow = sprite.params.x;
     float s = (sprite.size.x - 2.0 * glow) / 96.0; // designed 96 x 40
     vec2 q = p / s;
-    float hull = sdEllipse(q - vec2(0.0, 5.0), vec2(48.0, 12.0));
-    float dome = max(sdEllipse(q - vec2(0.0, -4.0), vec2(21.0, 15.0)), q.y - 2.0);
+    // Exact distances (a rounded box and a circle): an approximate ellipse
+    // distance shrinks along the long axis and would stretch the glow to the
+    // quad edge.
+    float hull = sdRoundBox(q - vec2(0.0, 5.0), vec2(48.0, 11.0), 11.0);
+    float dome = max(sdCircle(q - vec2(0.0, 1.0), 19.0), q.y - 2.0);
     float d = min(hull, dome) * s;
 
     vec3 body = sprite.color.rgb * (1.1 - 0.4 * clamp((q.y + 20.0) / 40.0, 0.0, 1.0));

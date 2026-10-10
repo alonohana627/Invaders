@@ -74,3 +74,10 @@ by running the game are listed; updated in the same commit as each feature
 - Screen shake (behind the screen-shake setting), a red alarm tint, a
   flickering wreck and a 0.1 s hit stop when the cannon dies; the aliens'
   glow pulses on every march step; the screen brightens for a new wave.
+
+## Polish
+
+- The title shows a score table beside the menu (the mystery ship's "?"
+  and the 30/20/10 aliens, dancing in their two frames); the menus use the
+  game's colors.
+- A ring of light where a new cannon appears.

@@ -44,6 +44,9 @@ void drawHud(gamelib::draw::DrawList& list, const ViewState& view);
 // Scanlines and the tube's dark corners, over everything but the menus.
 void drawOverlay(gamelib::draw::DrawList& list, const ViewState& view);
 
+// The points of each alien and the mystery ship, beside the title menu.
+void drawScoreTable(gamelib::draw::DrawList& list, const ViewState& view);
+
 // The cannon at `center` (also the spare cannons in the HUD).
 void drawCannon(gamelib::draw::DrawList& list, const Shapes& shapes, gamelib::core::Vec2 center, float width,
                 float flash = 0.0f, float alpha = 1.0f);

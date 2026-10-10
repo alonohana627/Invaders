@@ -238,8 +238,8 @@ void InvadersGame::handleEvents(gamelib::app::App& app)
             break;
         case game::EventKind::BombDropped:
         case game::EventKind::SaucerAppeared:
-        case game::EventKind::SaucerLeft:
-        case game::EventKind::Respawned: break;
+        case game::EventKind::SaucerLeft: break;
+        case game::EventKind::Respawned: m_effects.flash(event.position, colors.cannonGlow, 70.0f, 0.45f); break;
         }
     }
 }
@@ -294,6 +294,9 @@ void InvadersGame::draw(gamelib::app::App& app, gamelib::draw::DrawList& list, c
         m_effects.drawOver(list, shake);
     }
     drawHud(list, view);
+    if (title) {
+        drawScoreTable(list, view);
+    }
     drawOverlay(list, view);
 
     const gamelib::ui::Menu* menu = m_menus.menu();
@@ -301,6 +304,8 @@ void InvadersGame::draw(gamelib::app::App& app, gamelib::draw::DrawList& list, c
         return;
     }
     gamelib::ui::MenuStyle style;
+    style.title = palette().cannon; // the player's green, as on the cabinet's overlay
+    style.border = palette().crab.scaled(0.45f);
     std::string subtitle;
     std::string footer;
     if (title) {

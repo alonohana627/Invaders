@@ -180,4 +180,33 @@ void drawOverlay(gamelib::draw::DrawList& list, const ViewState& view)
     list.add({.rect = {0.0f, 0.0f, kCanvasWidth, kCanvasHeight}, .shape = view.shapes.crt, .params = {1.0f, 0.0f, 0.0f, 0.0f}});
 }
 
+
+void drawScoreTable(gamelib::draw::DrawList& list, const ViewState& view)
+{
+    const game::Rules& rules = view.session.rules();
+    const Palette& colors = palette();
+    const float x = 1740.0f; // the middle of the margin right of the field
+    list.text("SCORE", x, 300.0f, {.pixelSize = 4.0f, .color = colors.textDim, .align = gamelib::draw::Align::Center});
+    list.text("TABLE", x, 336.0f, {.pixelSize = 4.0f, .color = colors.textDim, .align = gamelib::draw::Align::Center});
+    const gamelib::draw::TextStyle points{.pixelSize = 4.0f, .color = colors.text};
+    float y = 420.0f;
+    list.add({.rect = Rect::fromCenter({x - 60.0f, y}, {72.0f + 2.0f * kSaucerGlow, 30.0f + 2.0f * kSaucerGlow}),
+              .color = colors.saucer,
+              .color2 = colors.saucerGlow,
+              .shape = view.shapes.saucer,
+              .params = {kSaucerGlow, 0.0f, view.time * 9.0f, 0.0f}});
+    list.text("= ?", x - 6.0f, y - 14.0f, points);
+    const float frame = std::fmod(view.time * 1.6f, 2.0f) < 1.0f ? 0.0f : 1.0f;
+    for (int type = 0; type < 3; ++type) {
+        y += 90.0f;
+        const auto alien = static_cast<game::AlienType>(type);
+        const float width = rules.alienWidth[static_cast<std::size_t>(type)];
+        list.add({.rect = Rect::fromCenter({x - 60.0f, y}, {width, rules.alienHeight}).expanded(kAlienGlow),
+                  .color = alienColor(alien),
+                  .color2 = alienColor(alien),
+                  .shape = view.shapes.alien,
+                  .params = {static_cast<float>(type), frame, kAlienGlow, 0.0f}});
+        list.text("= " + std::to_string(rules.alienPoints[static_cast<std::size_t>(type)]), x - 6.0f, y - 14.0f, points);
+    }
+}
 } // namespace invaders::app
