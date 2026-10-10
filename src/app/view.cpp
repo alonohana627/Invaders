@@ -3,6 +3,7 @@
 #include "palette.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 namespace invaders::app {
@@ -24,16 +25,6 @@ constexpr float kCanvasHeight = 1080.0f;
 [[nodiscard]] Rect _moved(const Rect& rect, const Vec2 offset)
 {
     return {rect.x + offset.x, rect.y + offset.y, rect.width, rect.height};
-}
-
-[[nodiscard]] Color _alienColor(const game::AlienType type)
-{
-    switch (type) {
-    case game::AlienType::Squid: return palette().squid;
-    case game::AlienType::Crab: return palette().crab;
-    case game::AlienType::Octopus: return palette().octopus;
-    }
-    return palette().crab;
 }
 
 void _drawShields(gamelib::draw::DrawList& list, const ViewState& view)
@@ -68,7 +59,7 @@ void _drawFormation(gamelib::draw::DrawList& list, const ViewState& view)
     const game::Formation& formation = view.session.formation();
     for (int row = 0; row < game::Rules::kRows; ++row) {
         const game::AlienType type = game::Formation::type(row);
-        const Color color = _alienColor(type);
+        const Color color = alienColor(type);
         for (int column = 0; column < game::Rules::kColumns; ++column) {
             if (!formation.alive({column, row})) {
                 continue;
@@ -77,7 +68,7 @@ void _drawFormation(gamelib::draw::DrawList& list, const ViewState& view)
                       .color = color,
                       .color2 = color,
                       .shape = view.shapes.alien,
-                      .params = {static_cast<float>(type), static_cast<float>(formation.frame()), kAlienGlow, 0.0f}});
+                      .params = {static_cast<float>(type), static_cast<float>(formation.frame()), kAlienGlow, 0.18f * view.pulse}});
         }
     }
 }
@@ -104,7 +95,7 @@ void drawBackground(gamelib::draw::DrawList& list, const ViewState& view)
               .color = palette().screen,
               .color2 = palette().screenGlow,
               .shape = view.shapes.crt,
-              .params = {0.0f, rules.shieldTop - 30.0f, rules.saucerY + 50.0f, 0.0f}});
+              .params = {0.0f, rules.shieldTop - 30.0f, rules.saucerY + 50.0f, view.flash}});
 }
 
 void drawField(gamelib::draw::DrawList& list, const ViewState& view)
@@ -140,6 +131,11 @@ void drawField(gamelib::draw::DrawList& list, const ViewState& view)
     }
     if (session.cannonVisible()) {
         drawCannon(list, view.shapes, Vec2{session.cannonX().at(view.alpha), rules.cannonY} + view.shake, rules.cannonWidth);
+    } else if (session.phase() == game::Phase::Dying && view.wreck > 0.0f) {
+        // The wreck flickers between white-hot and dark while it burns out.
+        const bool bright = std::fmod(view.time * 18.0f, 1.0f) < 0.5f;
+        drawCannon(list, view.shapes, Vec2{session.cannonX().value(), rules.cannonY} + view.shake, rules.cannonWidth,
+                   bright ? 0.8f : 0.0f, (bright ? 1.0f : 0.35f) * view.wreck);
     }
 }
 
@@ -178,6 +174,9 @@ void drawHud(gamelib::draw::DrawList& list, const ViewState& view)
 
 void drawOverlay(gamelib::draw::DrawList& list, const ViewState& view)
 {
+    if (view.alarm > 0.0f) {
+        list.box({0.0f, 0.0f, kCanvasWidth, kCanvasHeight}, palette().danger.withAlpha(0.11f * view.alarm));
+    }
     list.add({.rect = {0.0f, 0.0f, kCanvasWidth, kCanvasHeight}, .shape = view.shapes.crt, .params = {1.0f, 0.0f, 0.0f, 0.0f}});
 }
 

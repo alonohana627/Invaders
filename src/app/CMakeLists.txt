@@ -3,6 +3,7 @@
 # effects come from GameLib (app, ui, audio, fx); what stays here is
 # Invaders' content and look.
 add_library(invaders_app STATIC
+    effects.cpp
     invaders_game.cpp
     sounds.cpp
     view.cpp)

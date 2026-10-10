@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rules.hpp"
+
 #include <gamelib/core/color.hpp>
 
 namespace invaders::app {
@@ -58,6 +60,17 @@ struct Palette {
         .danger = srgb(0xFF4F5E),
     };
     return kPalette;
+}
+
+// Each alien kind's hue.
+[[nodiscard]] inline gamelib::core::Color alienColor(const game::AlienType type)
+{
+    switch (type) {
+    case game::AlienType::Squid: return palette().squid;
+    case game::AlienType::Crab: return palette().crab;
+    case game::AlienType::Octopus: return palette().octopus;
+    }
+    return palette().crab;
 }
 
 } // namespace invaders::app

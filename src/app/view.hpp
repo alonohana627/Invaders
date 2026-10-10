@@ -29,6 +29,10 @@ struct ViewState {
     float time = 0.0f;         // seconds, for animation
     gamelib::core::Vec2 shake; // added to everything on the field
     std::int64_t best = 0;
+    float pulse = 0.0f;        // 0..1 the aliens brighten on a march step
+    float flash = 0.0f;        // 0..1 the screen brightens (a new wave)
+    float alarm = 0.0f;        // 0..1 red tint after the cannon exploded
+    float wreck = 0.0f;        // 0..1 the exploding cannon flickers while this lasts
     bool hud = true;           // the title's attract demo shows no score line
 };
 

@@ -61,3 +61,16 @@ by running the game are listed; updated in the same commit as each feature
 - The mystery ship's siren loops (GameLib's `Player::loop`) for as long as
   it flies, a little louder and higher in the middle of its run; it fades
   out when the ship goes or the game pauses.
+
+## Juice
+
+- Explosion flashes (a white-hot core in a spreading ring, GameLib's
+  `fx::Transients`) for aliens, the mystery ship, the cannon, bombs meeting
+  shots or the ground and shots leaving the top; alien sparks in the
+  alien's hue and green shield crumbs flying off each hit (`fx::Particles`).
+- The cannon's shot leaves a streak (`fx::Trail`); the mystery ship's
+  points rise from where it was hit (`fx::Popups` at a position); banners
+  for each wave, a cleared wave, an extra cannon and the invasion.
+- Screen shake (behind the screen-shake setting), a red alarm tint, a
+  flickering wreck and a 0.1 s hit stop when the cannon dies; the aliens'
+  glow pulses on every march step; the screen brightens for a new wave.

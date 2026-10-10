@@ -1,5 +1,6 @@
 #pragma once
 
+#include "effects.hpp"
 #include "gunner.hpp"
 #include "session.hpp"
 #include "sounds.hpp"
@@ -46,10 +47,12 @@ private:
     gamelib::app::ArcadeMenus m_menus{"INVADERS", m_profile.value().settings};
     Shapes m_shapes;
     Sounds m_sounds;
+    Effects m_effects;
     gamelib::core::Rng m_seeds{gamelib::core::randomSeed()};
     gamelib::ai::AttractMode<Demo> m_attract;
     gamelib::core::ScoreKeeper m_scores;
     gamelib::core::Cooldown m_gameOverDelay; // the last explosion plays out before the game-over menu
+    gamelib::core::Cooldown m_hitStop;       // a brief freeze when the cannon is hit
     bool m_gameEnded = false;
 
     bool m_demoMode;

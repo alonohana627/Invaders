@@ -5,12 +5,14 @@
 #include "cannon_frag.spv.hpp"
 #include "crt_frag.spv.hpp"
 #include "saucer_frag.spv.hpp"
+#include "palette.hpp"
 #include "shield_frag.spv.hpp"
 
 #include <gamelib/app/settings.hpp>
 #include <gamelib/ui/menu.hpp>
 
 #include <cmath>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -63,6 +65,8 @@ void InvadersGame::startGame(gamelib::app::App& app)
     m_scores.reset();
     m_gameEnded = false;
     m_gameOverDelay.clear();
+    m_hitStop.clear();
+    m_effects.clear();
 }
 
 const game::Session& InvadersGame::shownSession() const
@@ -78,7 +82,10 @@ void InvadersGame::onKey(gamelib::app::App& app, const gamelib::platform::KeyEve
     }
     switch (result.action) {
     case ArcadeAction::Start: startGame(app); break;
-    case ArcadeAction::ToTitle: saveBest(); break;
+    case ArcadeAction::ToTitle:
+        saveBest();
+        m_effects.clear();
+        break;
     case ArcadeAction::Quit:
         saveBest();
         app.requestQuit();
@@ -109,7 +116,9 @@ void InvadersGame::tick(gamelib::app::App& app)
     switch (m_menus.current()) {
     case ArcadeScreen::Title: m_attract.tick(app.tickSeconds()); break;
     case ArcadeScreen::Playing:
-        m_session.tick(m_demoMode ? m_gunner.decide(m_session) : playerInput(app.input()));
+        if (m_hitStop.ready()) { // the field holds its breath for a moment when the cannon is hit
+            m_session.tick(m_demoMode ? m_gunner.decide(m_session) : playerInput(app.input()));
+        }
         break;
     case ArcadeScreen::GameOver: m_session.tick({}); break;
     case ArcadeScreen::Paused: break;
@@ -120,8 +129,16 @@ void InvadersGame::frame(gamelib::app::App& app, const gamelib::app::FrameInfo& 
 {
     m_time = info.time;
     m_gameOverDelay.update(info.seconds);
+    m_hitStop.update(info.seconds);
+    if (!m_menus.is(ArcadeScreen::Paused)) {
+        m_effects.update(info.seconds); // effects freeze with the game while paused
+    }
     handleEvents(app);
     loopSounds(app);
+    if (m_menus.is(ArcadeScreen::Playing) || m_menus.is(ArcadeScreen::GameOver)) {
+        const auto& shot = m_session.shot();
+        m_effects.recordShot(shot ? std::optional{shot->at(info.alpha)} : std::nullopt);
+    }
     if (!m_demoMode) {
         m_scores.set(m_session.score()); // the demo never sets a best score
     }
@@ -142,38 +159,87 @@ void InvadersGame::handleEvents(gamelib::app::App& app)
     // The attract demo is silent and has no effects; its events are dropped.
     (void)m_attract.sim().session.takeEvents();
     gamelib::audio::SoundQueue& queue = app.sounds();
+    const Palette& colors = palette();
     for (const game::Event& event : m_session.takeEvents()) {
         switch (event.kind) {
-        case game::EventKind::Fired: m_sounds.queue(queue, Sfx::Fire, 1.0f, m_soundRng.uniform(0.97f, 1.03f)); break;
-        case game::EventKind::AlienKilled:
-            m_sounds.queue(queue, Sfx::AlienDeath, 1.0f, m_soundRng.uniform(0.94f, 1.06f));
+        case game::EventKind::Fired:
+            m_sounds.queue(queue, Sfx::Fire, 1.0f, m_soundRng.uniform(0.97f, 1.03f));
+            m_effects.flash(event.position + gamelib::core::Vec2{0.0f, 10.0f}, colors.cannonGlow, 14.0f, 0.12f); // muzzle
             break;
-        case game::EventKind::ShieldHit: m_sounds.queue(queue, Sfx::ShieldHit, 1.0f, m_soundRng.uniform(0.9f, 1.1f)); break;
-        case game::EventKind::ShotHitBomb: m_sounds.queue(queue, Sfx::ShotHitBomb); break;
-        case game::EventKind::BombLanded: m_sounds.queue(queue, Sfx::BombLanded, 0.8f, m_soundRng.uniform(0.9f, 1.1f)); break;
+        case game::EventKind::ShotMissed:
+            m_effects.flash(event.position, colors.shot, 16.0f, 0.2f);
+            m_effects.sparks(event.position, colors.cannonGlow, 5, 160.0f);
+            break;
+        case game::EventKind::AlienKilled: {
+            const gamelib::core::Color color = alienColor(event.alien);
+            m_sounds.queue(queue, Sfx::AlienDeath, 1.0f, m_soundRng.uniform(0.94f, 1.06f));
+            m_effects.flash(event.position, color, 40.0f, 0.3f);
+            m_effects.sparks(event.position, color, 12, 360.0f);
+            m_effects.shake.trigger(0.12f);
+            break;
+        }
+        case game::EventKind::ShieldHit:
+            m_sounds.queue(queue, Sfx::ShieldHit, 1.0f, m_soundRng.uniform(0.9f, 1.1f));
+            m_effects.crumbs(event.position, colors.shield, event.value == 1);
+            m_effects.flash(event.position, event.value == 1 ? colors.bombGlow : colors.shield, 16.0f, 0.16f);
+            break;
+        case game::EventKind::ShotHitBomb:
+            m_sounds.queue(queue, Sfx::ShotHitBomb);
+            m_effects.flash(event.position, colors.bomb, 24.0f, 0.22f);
+            m_effects.sparks(event.position, colors.bombGlow, 8, 260.0f);
+            break;
+        case game::EventKind::BombLanded:
+            m_sounds.queue(queue, Sfx::BombLanded, 0.8f, m_soundRng.uniform(0.9f, 1.1f));
+            m_effects.flash(event.position, colors.bombGlow, 20.0f, 0.25f);
+            m_effects.sparks(event.position, colors.bombGlow, 6, 200.0f);
+            break;
         case game::EventKind::Step:
             m_sounds.queue(queue, static_cast<Sfx>(static_cast<int>(Sfx::March0) + event.value));
+            m_effects.stepPulse.trigger();
             break;
-        case game::EventKind::SaucerKilled: m_sounds.queue(queue, Sfx::SaucerDeath); break;
-        case game::EventKind::CannonDestroyed: m_sounds.queue(queue, Sfx::CannonDeath); break;
-        case game::EventKind::ExtraLife: m_sounds.queue(queue, Sfx::ExtraLife); break;
-        case game::EventKind::WaveCleared: m_sounds.queue(queue, Sfx::WaveCleared); break;
+        case game::EventKind::SaucerKilled:
+            m_sounds.queue(queue, Sfx::SaucerDeath);
+            m_effects.flash(event.position, colors.saucerGlow, 90.0f, 0.5f);
+            m_effects.sparks(event.position, colors.saucer, 26, 480.0f);
+            m_effects.scorePopup(event.position + gamelib::core::Vec2{0.0f, -10.0f}, event.points, colors.accent);
+            m_effects.shake.trigger(0.45f);
+            break;
+        case game::EventKind::CannonDestroyed:
+            m_sounds.queue(queue, Sfx::CannonDeath);
+            m_effects.flash(event.position, colors.cannonGlow, 110.0f, 0.6f);
+            m_effects.flash(event.position, colors.danger, 60.0f, 0.35f);
+            m_effects.sparks(event.position, colors.cannon, 30, 560.0f);
+            m_effects.sparks(event.position, colors.danger, 16, 380.0f);
+            m_effects.shake.trigger(1.0f);
+            m_effects.alarm.trigger();
+            m_effects.wreck.trigger();
+            m_hitStop.start(0.1f);
+            break;
+        case game::EventKind::Invaded: m_effects.banner("INVADED!", colors.danger, 1.6f); break;
+        case game::EventKind::ExtraLife:
+            m_sounds.queue(queue, Sfx::ExtraLife);
+            m_effects.banner("EXTRA CANNON!", colors.cannon, 1.4f);
+            break;
+        case game::EventKind::WaveCleared:
+            m_sounds.queue(queue, Sfx::WaveCleared);
+            m_effects.banner("WAVE CLEARED", colors.accent, 1.8f);
+            break;
         case game::EventKind::WaveStarted:
             if (event.value > 1) {
                 m_sounds.queue(queue, Sfx::WaveStart);
+                m_effects.screenFlash.trigger();
             }
+            m_effects.banner("WAVE " + std::to_string(event.value), colors.text, 1.3f);
             break;
         case game::EventKind::GameOver:
             m_sounds.queue(queue, Sfx::GameOver);
             m_gameEnded = true;
             m_gameOverDelay.start(kGameOverDelay);
             break;
-        case game::EventKind::ShotMissed:
         case game::EventKind::BombDropped:
         case game::EventKind::SaucerAppeared:
         case game::EventKind::SaucerLeft:
-        case game::EventKind::Respawned:
-        case game::EventKind::Invaded: break;
+        case game::EventKind::Respawned: break;
         }
     }
 }
@@ -206,14 +272,27 @@ void InvadersGame::saveBest()
 void InvadersGame::draw(gamelib::app::App& app, gamelib::draw::DrawList& list, const gamelib::app::FrameInfo& info)
 {
     const bool title = m_menus.is(ArcadeScreen::Title);
+    const gamelib::core::Vec2 shake =
+        m_profile.value().settings.screenShake && !title ? m_effects.shake.offset(info.time) : gamelib::core::Vec2{};
     const ViewState view{.session = shownSession(),
                          .shapes = m_shapes,
                          .alpha = m_menus.is(ArcadeScreen::Paused) ? 1.0f : info.alpha,
                          .time = info.time,
+                         .shake = shake,
                          .best = m_scores.best(),
+                         .pulse = title ? 0.0f : m_effects.stepPulse.value(),
+                         .flash = title ? 0.0f : m_effects.screenFlash.value(),
+                         .alarm = title ? 0.0f : m_effects.alarm.value(),
+                         .wreck = title ? 0.0f : m_effects.wreck.value(),
                          .hud = !title};
     drawBackground(list, view);
+    if (!title) {
+        m_effects.drawUnder(list, shake);
+    }
     drawField(list, view);
+    if (!title) {
+        m_effects.drawOver(list, shake);
+    }
     drawHud(list, view);
     drawOverlay(list, view);
 
